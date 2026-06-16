@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compartir Ubicación GPS</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+</head>
+<body style="font-family: Arial, sans-serif; text-align: center; padding-top: 50px; background-color: #f0f2f5;">
+
+    <h2>Transmisor GPS Activo</h2>
+    <p id="estado" style="font-size: 18px; color: #555;">Iniciando GPS de alta precisión...</p>
+
+    <script>
+        // Tus datos reales de Firebase ya integrados
+        const firebaseConfig = {
+            apiKey: "AIzaSyCVatFTkzDlB6Rj2xwAAtz8BK8Ab86g4N4",
+            authDomain: "rastreador-gps-ef686.firebaseapp.com",
+            databaseURL: "https://rastreador-gps-ef686-default-rtdb.firebaseio.com",
+            projectId: "rastreador-gps-ef686",
+            storageBucket: "rastreador-gps-ef686.firebasestorage.app",
+            messagingSenderId: "563380850657",
+            appId: "1:563380850657:web:59cef0fb7abff3e1794ca0"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        function iniciarRastreo() {
+            if (navigator.geolocation) {
+                // watchPosition actualiza de forma continua ante cambios de posición
+                navigator.geolocation.watchPosition(actualizarBaseDatos, mostrarError, {
+                    enableHighAccuracy: true, // FUERZA EL USO DEL GPS REAL (Evita aproximaciones por Wi-Fi)
+                    timeout: 10000,
+                    maximumAge: 0
+                });
+            } else {
+                document.getElementById("estado").innerText = "Tu dispositivo no soporta localización.";
+            }
+        }
+
+        function actualizarBaseDatos(posicion) {
+            const lat = posicion.coords.latitude;
+            const lon = posicion.coords.longitude;
+            const hora = new Date().toLocaleString();
+
+            document.getElementById("estado").innerHTML = `
+                <strong style="color: green; font-size: 22px;">✓ Compartiendo posición</strong><br><br>
+                Última transmisión: ${hora}
+            `;
+
+            // Guarda la coordenada exacta directamente en tu base de datos
+            database.ref('rastreo/hija').set({
+                latitud: lat,
+                longitud: lon,
+                ultima_conexion: hora
+            });
+        }
+
+        function mostrarError(error) {
+            let msg = "Buscando señal de satélites GPS...";
+            if(error.code === error.PERMISSION_DENIED) {
+                msg = "ERROR: Debes permitir el acceso a la ubicación precisa en el navegador.";
+            }
+            document.getElementById("estado").innerText = msg;
+            document.getElementById("estado").style.color = "red";
+        }
+
+        window.onload = iniciarRastreo;
+    </script>
+</body>
+</html>
